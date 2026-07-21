@@ -2,7 +2,7 @@
 
 ## Status
 
-This is a provisional plan. It contains no installation commands because exact versions and missing components have not been confirmed on the development PC.
+Provisional plan. Stage 1 (read-only audit) and part of Stage 2 (toolchain) were completed on 2026-07-21: the environment was audited and the missing C# toolchain (`godot-mono` + .NET SDK 10.0.110) was installed. Stages 3–6 (C# Android validation, MCP validation, asset round trip, prototype authorization) remain outstanding, and the on-device validation gate in `decisions/001-godot-csharp-android.md` is not yet closed. See `environment.md` for confirmed values and the package installation method.
 
 ## Principles
 
@@ -13,11 +13,11 @@ This is a provisional plan. It contains no installation commands because exact v
 - Validate Android early and repeatedly.
 - Record exact versions only after observing them.
 
-## Stage 1: Read-Only Audit
+## Stage 1: Read-Only Audit — completed 2026-07-21
 
-Complete the checklist in `environment.md`. Classify each item as confirmed, missing, incompatible, or unknown.
+Completed on the development PC. Findings are recorded under "Confirmed on Development PC" in `environment.md`. Key results: Godot 4.7.stable standard edition was installed but the `.NET` edition and .NET SDK were missing; the Android toolchain (JDK 17, SDK, NDK 28.2, export templates) was largely present; no Android device was connected.
 
-Do not install .NET merely because C# is planned. First confirm the Godot version, Godot edition, currently installed SDKs, and official compatibility requirements for that exact release.
+Historical guidance (still valid for other machines): do not install .NET merely because C# is planned. First confirm the Godot version, Godot edition, currently installed SDKs, and official compatibility requirements for that exact release.
 
 ## Stage 2: Toolchain Proposal
 
@@ -35,9 +35,9 @@ If anything is missing, present a proposal containing:
 
 Wait for approval before installation or reconfiguration.
 
-## Stage 3: C# Android Validation
+## Stage 3: C# Android Validation — completed 2026-07-21
 
-Run the validation gate in `decisions/001-godot-csharp-android.md` using a disposable project. Do not begin production systems until the decision is accepted or rejected.
+The gate in `decisions/001-godot-csharp-android.md` was run with a disposable project and passed on a physical Android device (Vivo I2508, Android 16, arm64-v8a, Adreno 829). Decision 001 is now **Accepted**. See that decision and the "C# Android Export Requirements" section of `environment.md` for the confirmed setup.
 
 ## Stage 4: MCP Validation
 

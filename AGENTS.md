@@ -4,9 +4,9 @@ These instructions apply to the entire repository. A closer `AGENTS.md` may add 
 
 ## Project Context
 
-Celestial is a long-term, solo-developed, Android-only maritime exploration game planned for Godot 4. Development will be assisted through OpenCode, Beckett MCP, and BlenderMCP.
+Bodies of the Astra Sea is a long-term, solo-developed, Android-only maritime exploration game planned for Godot 4. Development will be assisted through OpenCode, Beckett MCP, and BlenderMCP.
 
-Read `README.md` and the relevant documents under `concept/` and `development/` before changing implementation or settled design.
+Read `README.md` and the relevant documents under `docs/concept/` and `docs/development/` before changing implementation or settled design.
 
 ## Evidence and Assumptions
 
@@ -49,7 +49,7 @@ The current documentation was initially prepared on a restricted Windows plannin
 
 - Android is the only planned product platform. Desktop execution may support development but is not proof of Android compatibility.
 - Godot 4 .NET and C# are the provisional primary engine and language choice.
-- Do not begin production implementation until the C# Android validation gate in `development/decisions/001-godot-csharp-android.md` has been evaluated on the development PC.
+- Do not begin production implementation until the C# Android validation gate in `docs/development/decisions/001-godot-csharp-android.md` has been evaluated on the development PC.
 - Do not introduce GDScript by default. A language change or mixed-language architecture requires an explicit decision update.
 - Mobile performance is an architectural constraint from the beginning.
 
@@ -105,4 +105,4 @@ After work:
 
 ## Handoffs
 
-Use `handoffs/template.md`. A handoff is temporary operational context, not the permanent source of truth. Move permanent decisions into `development/decisions/` and permanent design into `concept/`.
+Use `docs/handoffs/template.md`. A handoff is temporary operational context, not the permanent source of truth. Move permanent decisions into `docs/development/decisions/` and permanent design into `docs/concept/`.

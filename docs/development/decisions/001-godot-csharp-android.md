@@ -2,7 +2,25 @@
 
 ## Status
 
-**Provisional — requires validation on the CachyOS development PC and representative Android hardware.**
+**Accepted — validated on the CachyOS development PC and a representative Android device on 2026-07-21.**
+
+Godot 4 .NET with C# is confirmed usable for this project. A disposable C# project compiled, exported a debug APK, and ran on a physical Android phone with hardware Vulkan rendering, working touch input, vibration, and save-file I/O.
+
+Confirmed versions:
+
+- Godot `.NET` build: `godot-mono` 4.7.stable.mono (`/usr/bin/godot-mono`)
+- .NET SDK: 10.0.110 (runtime Microsoft.NETCore.App 10.0.10)
+- Android export templates: `4.7.stable.mono` (downloaded and installed separately; the standard `godot` templates do not work for the `.mono` build)
+- Test device: Vivo I2508, Android 16 (SDK 36), arm64-v8a, Snapdragon (canoe), Adreno 829, 11 GB RAM, Vulkan 1.4 (Forward Mobile)
+
+Required setup facts discovered during validation (see `../environment.md` "C# Android Export Requirements"):
+
+1. The `.mono` Godot build needs its own export templates at `~/.local/share/godot/export_templates/4.7.stable.mono/`; the standard build's templates are not sufficient.
+2. The `.csproj` must target `net9.0`. The 4.7 Android export template rejected `net8.0` and does not accept `net10.0`, even though the installed SDK is 10.0.110 (SDK 10 builds `net9.0` fine).
+3. A classic-format `CSharpGate.sln` is required for export. .NET 10's `dotnet new sln` emits the newer `.slnx`, which Godot 4.7 does not recognise — without a `.sln`, the C# assembly is silently omitted and the APK is a non-functional ~29 MB instead of ~105 MB.
+4. Android export requires `rendering/textures/vram_compression/import_etc2_astc=true` in project settings.
+5. Editor setting `export/android/java_sdk_path` must point at the JDK (here `/usr/lib/jvm/java-17-openjdk`); a debug keystore at `~/.local/share/godot/keystores/debug.keystore` (alias `androiddebugkey`, pass `android`) is needed.
+6. Headless C#/.NET Android export is flagged "experimental" by Godot and one headless editor invocation crashed on shutdown (signal 11 in `is_cmdline_mode`) without affecting output. Treat headless export as working-but-unofficial.
 
 ## Context
 
@@ -34,22 +52,22 @@ Complexity alone does not make C# architecture good. Clear system boundaries, da
 
 ## Android Validation Gate
 
-Before production implementation, create a disposable technical project and confirm on a representative Android device:
+A disposable technical project (`/tmp/opencode/csharp-gate`) was validated on a representative Android device on 2026-07-21:
 
-1. The installed Godot edition supports C#.
-2. A compatible .NET SDK is available.
-3. A minimal C# project compiles without unresolved tooling errors.
-4. A debug APK exports successfully.
-5. The APK installs and launches repeatedly.
-6. A basic 3D scene renders correctly.
-7. Single-touch and multitouch input work.
-8. Vibration can be invoked and disabled safely.
-9. A small save file can be written and loaded.
-10. A plain C# simulation type can be exercised independently of presentation.
-11. Code-change iteration is reliable enough for regular development.
-12. Startup time, memory use, package size, and frame pacing are acceptable for the representative device.
+1. The installed Godot edition supports C#. — **PASS:** `godot-mono` 4.7.stable installed alongside standard `godot`.
+2. A compatible .NET SDK is available. — **PASS:** .NET SDK 10.0.110; builds `net9.0` projects.
+3. A minimal C# project compiles without unresolved tooling errors. — **PASS:** `dotnet build` produced `CSharpGate.dll`, 0 warnings / 0 errors.
+4. A debug APK exports successfully. — **PASS:** ~105 MB signed APK (C# assembly + arm64 .NET runtime bundled) once the `.sln` and `net9.0` requirements were met.
+5. The APK installs and launches repeatedly. — **PASS:** installed and launched via adb, ran repeatedly.
+6. A basic 3D scene renders correctly. — **PASS:** Vulkan 1.4 Forward Mobile on Adreno 829.
+7. Single-touch and multitouch input work. — **PASS (single-touch confirmed):** taps registered and handled in C# (`InputEventScreenTouch`). Multitouch not explicitly stress-tested.
+8. Vibration can be invoked and disabled safely. — **PASS:** `Input.VibrateHandheld` fired on each touch on-device.
+9. A small save file can be written and loaded. — **PASS:** `user://` file written and read back on-device.
+10. A plain C# simulation type can be exercised independently of presentation. — **PASS:** `TideModel` computed correctly.
+11. Code-change iteration is reliable enough for regular development. — **PARTIAL:** desktop build/run iteration is reliable; on-device rebuild→export→install→run loop works but is not yet time-measured for daily comfort.
+12. Startup time, memory use, package size, and frame pacing are acceptable. — **PARTIAL:** app started in well under a second and used ~259 MB PSS; package ~105 MB. Startup/memory/size acceptable; sustained frame pacing under real gameplay load not yet measured.
 
-Also ask Beckett MCP to perform one small, reversible C# Godot task. Review whether it creates idiomatic, compilable code and valid scene integration without exceeding its approved permissions.
+Outstanding (not blockers to Accept): explicit multitouch test, iteration-time measurement, sustained frame-pacing measurement, and asking Beckett MCP to perform one small reversible C# Godot task and reviewing the result.
 
 ## Success Outcome
 

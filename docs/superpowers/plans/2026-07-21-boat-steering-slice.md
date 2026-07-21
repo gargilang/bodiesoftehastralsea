@@ -4,7 +4,7 @@
 
 **Goal:** Build the first playable slice — a placeholder box-boat that moves and steers on a flat sea plane, followed by a smoothed chase camera, controllable by keyboard and touch, running on desktop and on the Android device.
 
-**Architecture:** A plain C# simulation core (`Celestial.Sim.BoatMotion`) in a standalone class library holds all authoritative movement math with zero Godot dependency and is unit-tested in isolation. A thin Godot boat node feeds it input and applies its state to the scene. Camera, wake, heel, and a dev-only debug overlay only read simulation state; nothing in presentation computes movement rules.
+**Architecture:** A plain C# simulation core (`Astral.Sim.BoatMotion`) in a standalone class library holds all authoritative movement math with zero Godot dependency and is unit-tested in isolation. A thin Godot boat node feeds it input and applies its state to the scene. Camera, wake, heel, and a dev-only debug overlay only read simulation state; nothing in presentation computes movement rules.
 
 **Tech Stack:** Godot 4.7 `.mono` (`godot-mono`), .NET SDK 10.0.110 targeting `net9.0`, C#, xUnit for tests. Godot built-in primitive meshes only. No Blender, no new runtime dependencies.
 
@@ -18,7 +18,7 @@ Copied from `docs/development/decisions/001-godot-csharp-android.md` and the des
 - Android export requires `rendering/textures/vram_compression/import_etc2_astc=true` in `project.godot`.
 - Android export preset targets `arm64-v8a` only; uses the debug keystore at `~/.local/share/godot/keystores/debug.keystore` (alias `androiddebugkey`, store/key pass `android`); `.mono` export templates are installed at `~/.local/share/godot/export_templates/4.7.stable.mono/`.
 - Editor setting `export/android/java_sdk_path` = `/usr/lib/jvm/java-17-openjdk` (already set).
-- The simulation core (`Celestial.Sim`) must not reference `Godot` or any Godot type. Presentation code must never contain authoritative movement rules (AGENTS.md).
+- The simulation core (`Astral.Sim`) must not reference `Godot` or any Godot type. Presentation code must never contain authoritative movement rules (AGENTS.md).
 - The test framework is a development-only dependency and must not be referenced by the Godot game assembly or shipped in the APK.
 - No numeric HUD in the normal view; speed/heading numbers appear only in a debug overlay that is hidden by default.
 - Named tuning constants only; no unexplained magic numbers in movement code.
@@ -29,18 +29,18 @@ Copied from `docs/development/decisions/001-godot-csharp-android.md` and the des
 ```
 / (repo root)
 ├── project.godot                  # Godot project (root)
-├── Celestial.sln                  # classic-format solution
-├── Celestial.Game.csproj          # Godot game assembly (net9.0)
+├── Astral.sln                  # classic-format solution
+├── Astral.Game.csproj          # Godot game assembly (net9.0)
 ├── icon.svg                       # project icon (avoids export warning)
 ├── export_presets.cfg             # Android arm64 debug preset
 ├── sim/
-│   ├── Celestial.Sim.csproj       # plain C# class library (net9.0, no Godot)
+│   ├── Astral.Sim.csproj       # plain C# class library (net9.0, no Godot)
 │   ├── BoatTuning.cs
 │   ├── Vec2.cs
 │   └── BoatMotion.cs
 ├── tests/
-│   └── Celestial.Sim.Tests/
-│       ├── Celestial.Sim.Tests.csproj   # xunit, references sim/
+│   └── Astral.Sim.Tests/
+│       ├── Astral.Sim.Tests.csproj   # xunit, references sim/
 │       └── BoatMotionTests.cs
 ├── scripts/
 │   ├── Boat.cs
@@ -58,21 +58,21 @@ Copied from `docs/development/decisions/001-godot-csharp-android.md` and the des
 Foundation types for the sim core. Pure C#, no Godot. Establishes the sim class library and the test project so later tasks have somewhere to add tests.
 
 **Files:**
-- Create: `sim/Celestial.Sim.csproj`
+- Create: `sim/Astral.Sim.csproj`
 - Create: `sim/Vec2.cs`
 - Create: `sim/BoatTuning.cs`
-- Create: `tests/Celestial.Sim.Tests/Celestial.Sim.Tests.csproj`
-- Create: `tests/Celestial.Sim.Tests/BoatMotionTests.cs`
-- Create: `Celestial.sln`
+- Create: `tests/Astral.Sim.Tests/Astral.Sim.Tests.csproj`
+- Create: `tests/Astral.Sim.Tests/BoatMotionTests.cs`
+- Create: `Astral.sln`
 
 **Interfaces:**
 - Produces:
-  - `namespace Celestial.Sim; public readonly struct Vec2 { public double X {get;} public double Z {get;} public Vec2(double x, double z); public static Vec2 FromHeading(double headingRadians); }` — `FromHeading` returns a unit vector where heading 0 points +Z and increases toward +X (clockwise viewed from above).
+  - `namespace Astral.Sim; public readonly struct Vec2 { public double X {get;} public double Z {get;} public Vec2(double x, double z); public static Vec2 FromHeading(double headingRadians); }` — `FromHeading` returns a unit vector where heading 0 points +Z and increases toward +X (clockwise viewed from above).
   - `public struct BoatTuning { public double MaxForwardSpeed; public double ForwardAccel; public double LinearDrag; public double MaxTurnRate; public double TurnResponse; public double AngularDrag; public double SpeedForFullTurn; public static BoatTuning Default { get; } }`
 
 - [ ] **Step 1: Create the sim class library project**
 
-Create `sim/Celestial.Sim.csproj`:
+Create `sim/Astral.Sim.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -80,14 +80,14 @@ Create `sim/Celestial.Sim.csproj`:
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Celestial.Sim</RootNamespace>
+    <RootNamespace>Astral.Sim</RootNamespace>
   </PropertyGroup>
 </Project>
 ```
 
 - [ ] **Step 2: Create the test project**
 
-Create `tests/Celestial.Sim.Tests/Celestial.Sim.Tests.csproj`:
+Create `tests/Astral.Sim.Tests/Astral.Sim.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -102,23 +102,23 @@ Create `tests/Celestial.Sim.Tests/Celestial.Sim.Tests.csproj`:
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../sim/Celestial.Sim.csproj" />
+    <ProjectReference Include="../../sim/Astral.Sim.csproj" />
   </ItemGroup>
 </Project>
 ```
 
 - [ ] **Step 3: Create the classic-format solution by hand**
 
-Create `Celestial.sln` (classic format — do NOT use `dotnet new sln`). Use fixed GUIDs so the file is stable:
+Create `Astral.sln` (classic format — do NOT use `dotnet new sln`). Use fixed GUIDs so the file is stable:
 
 ```
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.0.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Celestial.Sim", "sim\Celestial.Sim.csproj", "{11111111-1111-1111-1111-111111111111}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astral.Sim", "sim\Astral.Sim.csproj", "{11111111-1111-1111-1111-111111111111}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Celestial.Sim.Tests", "tests\Celestial.Sim.Tests\Celestial.Sim.Tests.csproj", "{22222222-2222-2222-2222-222222222222}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astral.Sim.Tests", "tests\Astral.Sim.Tests\Astral.Sim.Tests.csproj", "{22222222-2222-2222-2222-222222222222}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -143,7 +143,7 @@ EndGlobal
 Create `sim/Vec2.cs`:
 
 ```csharp
-namespace Celestial.Sim;
+namespace Astral.Sim;
 
 /// <summary>Planar position/direction on the water surface (X east, Z north).</summary>
 public readonly struct Vec2
@@ -171,7 +171,7 @@ public readonly struct Vec2
 Create `sim/BoatTuning.cs`:
 
 ```csharp
-namespace Celestial.Sim;
+namespace Astral.Sim;
 
 /// <summary>Named tuning values for boat movement. All units are per second unless noted.</summary>
 public struct BoatTuning
@@ -206,10 +206,10 @@ public struct BoatTuning
 
 - [ ] **Step 6: Add a placeholder test file so the test project compiles**
 
-Create `tests/Celestial.Sim.Tests/BoatMotionTests.cs`:
+Create `tests/Astral.Sim.Tests/BoatMotionTests.cs`:
 
 ```csharp
-using Celestial.Sim;
+using Astral.Sim;
 using Xunit;
 
 public class BoatMotionTests
@@ -232,7 +232,7 @@ public class BoatMotionTests
 
 - [ ] **Step 7: Run the tests to verify the toolchain and these types**
 
-Run: `dotnet test tests/Celestial.Sim.Tests/Celestial.Sim.Tests.csproj`
+Run: `dotnet test tests/Astral.Sim.Tests/Astral.Sim.Tests.csproj`
 Expected: build succeeds, 2 tests PASS.
 
 - [ ] **Step 8: Add a root .gitignore for build artifacts**
@@ -251,7 +251,7 @@ build/
 - [ ] **Step 9: Commit**
 
 ```bash
-git add sim/ tests/ Celestial.sln .gitignore
+git add sim/ tests/ Astral.sln .gitignore
 git commit -m "feat(sim): add Vec2 and BoatTuning primitives with test project"
 ```
 
@@ -263,7 +263,7 @@ Implement the linear (speed) half of the sim with TDD.
 
 **Files:**
 - Create: `sim/BoatMotion.cs`
-- Modify: `tests/Celestial.Sim.Tests/BoatMotionTests.cs`
+- Modify: `tests/Astral.Sim.Tests/BoatMotionTests.cs`
 
 **Interfaces:**
 - Consumes: `Vec2`, `BoatTuning` from Task 1.
@@ -273,10 +273,10 @@ Implement the linear (speed) half of the sim with TDD.
 
 - [ ] **Step 1: Write failing tests for throttle and coasting**
 
-Replace the contents of `tests/Celestial.Sim.Tests/BoatMotionTests.cs` with:
+Replace the contents of `tests/Astral.Sim.Tests/BoatMotionTests.cs` with:
 
 ```csharp
-using Celestial.Sim;
+using Astral.Sim;
 using Xunit;
 
 public class BoatMotionTests
@@ -351,7 +351,7 @@ public class BoatMotionTests
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `dotnet test tests/Celestial.Sim.Tests/Celestial.Sim.Tests.csproj`
+Run: `dotnet test tests/Astral.Sim.Tests/Astral.Sim.Tests.csproj`
 Expected: FAIL — `BoatMotion` does not exist (compile error).
 
 - [ ] **Step 3: Implement `BoatMotion` (throttle + drag + position; steering stubbed)**
@@ -359,7 +359,7 @@ Expected: FAIL — `BoatMotion` does not exist (compile error).
 Create `sim/BoatMotion.cs`:
 
 ```csharp
-namespace Celestial.Sim;
+namespace Astral.Sim;
 
 /// <summary>
 /// Authoritative, Godot-free boat movement. Coordinates are planar (X east, Z north);
@@ -404,13 +404,13 @@ public sealed class BoatMotion
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `dotnet test tests/Celestial.Sim.Tests/Celestial.Sim.Tests.csproj`
+Run: `dotnet test tests/Astral.Sim.Tests/Astral.Sim.Tests.csproj`
 Expected: all tests PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sim/BoatMotion.cs tests/Celestial.Sim.Tests/BoatMotionTests.cs
+git add sim/BoatMotion.cs tests/Astral.Sim.Tests/BoatMotionTests.cs
 git commit -m "feat(sim): BoatMotion throttle, drag, and position integration"
 ```
 
@@ -422,7 +422,7 @@ Add turning that scales with speed (a near-stationary boat barely turns), with a
 
 **Files:**
 - Modify: `sim/BoatMotion.cs`
-- Modify: `tests/Celestial.Sim.Tests/BoatMotionTests.cs`
+- Modify: `tests/Astral.Sim.Tests/BoatMotionTests.cs`
 
 **Interfaces:**
 - Consumes: `BoatMotion` from Task 2.
@@ -430,7 +430,7 @@ Add turning that scales with speed (a near-stationary boat barely turns), with a
 
 - [ ] **Step 1: Add failing steering tests**
 
-Append these tests inside the `BoatMotionTests` class in `tests/Celestial.Sim.Tests/BoatMotionTests.cs`:
+Append these tests inside the `BoatMotionTests` class in `tests/Astral.Sim.Tests/BoatMotionTests.cs`:
 
 ```csharp
     [Fact]
@@ -475,7 +475,7 @@ Append these tests inside the `BoatMotionTests` class in `tests/Celestial.Sim.Te
 
 - [ ] **Step 2: Run tests to verify the new ones fail**
 
-Run: `dotnet test tests/Celestial.Sim.Tests/Celestial.Sim.Tests.csproj`
+Run: `dotnet test tests/Astral.Sim.Tests/Astral.Sim.Tests.csproj`
 Expected: the three new tests FAIL (heading never changes; TurnRate stays 0).
 
 - [ ] **Step 3: Implement steering in `Step`**
@@ -513,13 +513,13 @@ In `sim/BoatMotion.cs`, replace the comment line `// Steering is added in Task 3
 
 - [ ] **Step 4: Run tests to verify all pass**
 
-Run: `dotnet test tests/Celestial.Sim.Tests/Celestial.Sim.Tests.csproj`
+Run: `dotnet test tests/Astral.Sim.Tests/Astral.Sim.Tests.csproj`
 Expected: all tests PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add sim/BoatMotion.cs tests/Celestial.Sim.Tests/BoatMotionTests.cs
+git add sim/BoatMotion.cs tests/Astral.Sim.Tests/BoatMotionTests.cs
 git commit -m "feat(sim): momentum-preserving steering with angular drag"
 ```
 
@@ -531,19 +531,19 @@ Create the root Godot `.mono` project, game assembly, solution wiring, icon, and
 
 **Files:**
 - Create: `project.godot`
-- Create: `Celestial.Game.csproj`
+- Create: `Astral.Game.csproj`
 - Create: `icon.svg`
-- Modify: `Celestial.sln`
+- Modify: `Astral.sln`
 - Create: `scripts/BuildProbe.cs`
 - Create: `scenes/Main.tscn`
 
 **Interfaces:**
-- Consumes: `Celestial.Sim` class library (Task 1–3).
-- Produces: a Godot project named `Celestial` whose main scene is `res://scenes/Main.tscn`; game assembly `Celestial.Game` referencing `sim/Celestial.Sim.csproj`.
+- Consumes: `Astral.Sim` class library (Task 1–3).
+- Produces: a Godot project named `Astral` whose main scene is `res://scenes/Main.tscn`; game assembly `Astral.Game` referencing `sim/Astral.Sim.csproj`.
 
 - [ ] **Step 1: Create the Godot game assembly project**
 
-Create `Celestial.Game.csproj`:
+Create `Astral.Game.csproj`:
 
 ```xml
 <Project Sdk="Godot.NET.Sdk/4.7.0">
@@ -553,17 +553,17 @@ Create `Celestial.Game.csproj`:
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="sim/Celestial.Sim.csproj" />
+    <ProjectReference Include="sim/Astral.Sim.csproj" />
   </ItemGroup>
 </Project>
 ```
 
 - [ ] **Step 2: Add the game project to the solution**
 
-Edit `Celestial.sln`: add the game project entry after the existing `Project(...)` blocks (before `Global`), and add its configuration lines. Insert this project line:
+Edit `Astral.sln`: add the game project entry after the existing `Project(...)` blocks (before `Global`), and add its configuration lines. Insert this project line:
 
 ```
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Celestial.Game", "Celestial.Game.csproj", "{33333333-3333-3333-3333-333333333333}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astral.Game", "Astral.Game.csproj", "{33333333-3333-3333-3333-333333333333}"
 EndProject
 ```
 
@@ -589,18 +589,18 @@ Create `icon.svg` (a minimal valid SVG):
 Create `project.godot`:
 
 ```
-; Celestial — boat steering slice
+; Astral — boat steering slice
 config_version=5
 
 [application]
 
-config/name="Celestial"
+config/name="Astral"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 run/main_scene="res://scenes/Main.tscn"
 
 [dotnet]
 
-project/assembly_name="Celestial.Game"
+project/assembly_name="Astral.Game"
 
 [rendering]
 
@@ -613,7 +613,7 @@ Create `scripts/BuildProbe.cs` (proves the game assembly can reference the sim l
 
 ```csharp
 using Godot;
-using Celestial.Sim;
+using Astral.Sim;
 
 public partial class BuildProbe : Node
 {
@@ -644,7 +644,7 @@ script = ExtResource("1")
 Run:
 ```bash
 godot-mono --headless --path . --import
-dotnet build Celestial.Game.csproj
+dotnet build Astral.Game.csproj
 godot-mono --headless --path . 2>&1 | grep PROBE
 ```
 Expected: build succeeds; output contains `[PROBE] sim reachable, speed=0.400` (approx). The `--import` step may crash on shutdown (known headless bug per environment.md) — that is acceptable as long as the build and PROBE run succeed.
@@ -652,8 +652,8 @@ Expected: build succeeds; output contains `[PROBE] sim reachable, speed=0.400` (
 - [ ] **Step 8: Commit**
 
 ```bash
-git add project.godot Celestial.Game.csproj Celestial.sln icon.svg scripts/BuildProbe.cs scenes/Main.tscn
-git commit -m "feat(godot): scaffold Celestial .mono project referencing sim library"
+git add project.godot Astral.Game.csproj Astral.sln icon.svg scripts/BuildProbe.cs scenes/Main.tscn
+git commit -m "feat(godot): scaffold Astral .mono project referencing sim library"
 ```
 
 ---
@@ -767,7 +767,7 @@ public sealed class BoatInput
 
 - [ ] **Step 3: Verify it compiles**
 
-Run: `dotnet build Celestial.Game.csproj`
+Run: `dotnet build Astral.Game.csproj`
 Expected: build succeeds, 0 errors.
 
 - [ ] **Step 4: Commit**
@@ -799,7 +799,7 @@ Create `scripts/Boat.cs`:
 
 ```csharp
 using Godot;
-using Celestial.Sim;
+using Astral.Sim;
 
 public partial class Boat : Node3D
 {
@@ -899,7 +899,7 @@ git rm scripts/BuildProbe.cs
 
 Run:
 ```bash
-dotnet build Celestial.Game.csproj
+dotnet build Astral.Game.csproj
 timeout 8 godot-mono --path . 2>&1 | grep -iE 'error|exception' || echo "no runtime errors"
 ```
 Expected: builds; no C# exceptions on load. (Visual/feel is judged manually by the owner separately.)
@@ -991,7 +991,7 @@ TargetPath = NodePath("../Boat")
 
 Run:
 ```bash
-dotnet build Celestial.Game.csproj
+dotnet build Astral.Game.csproj
 timeout 8 godot-mono --path . 2>&1 | grep -iE 'error|exception' || echo "no runtime errors"
 ```
 Expected: builds; no exceptions; camera exists.
@@ -1113,7 +1113,7 @@ text = ""
 
 Run:
 ```bash
-dotnet build Celestial.Game.csproj
+dotnet build Astral.Game.csproj
 timeout 8 godot-mono --path . 2>&1 | grep -iE 'error|exception' || echo "no runtime errors"
 ```
 Expected: builds; no exceptions; overlay hidden by default.
@@ -1175,7 +1175,7 @@ architectures/x86_64=false
 version/code=1
 version/name="0.1"
 package/unique_name="com.celestial.game"
-package/name="Celestial"
+package/name="Astral"
 package/signed=true
 package/app_category=2
 screen/immersive_mode=true
@@ -1188,7 +1188,7 @@ permissions/internet=false
 
 - [ ] **Step 2: Ensure the app is built for export**
 
-Run: `dotnet build Celestial.Game.csproj -c ExportDebug`
+Run: `dotnet build Astral.Game.csproj -c ExportDebug`
 Expected: build succeeds (ExportDebug is the config Godot uses for debug exports).
 
 - [ ] **Step 3: Export the debug APK headless**
@@ -1199,7 +1199,7 @@ mkdir -p build
 godot-mono --headless --path . --export-debug "Android" build/celestial.apk 2>&1 | grep -iE 'Signed|error|no solution'
 ls -la build/celestial.apk
 ```
-Expected: `Signed` appears; `build/celestial.apk` exists and is roughly 100+ MB (C# runtime bundled — a ~30 MB APK means the C# assembly was omitted; if so, confirm `Celestial.sln` includes the game project and re-export).
+Expected: `Signed` appears; `build/celestial.apk` exists and is roughly 100+ MB (C# runtime bundled — a ~30 MB APK means the C# assembly was omitted; if so, confirm `Astral.sln` includes the game project and re-export).
 
 - [ ] **Step 4: Install and launch on the device (if connected)**
 
@@ -1210,7 +1210,7 @@ adb install -r build/celestial.apk
 adb logcat -c
 adb shell monkey -p com.celestial.game -c android.intent.category.LAUNCHER 1
 sleep 5
-adb logcat -d | grep -iE 'godot|Celestial|FATAL' | tail -15
+adb logcat -d | grep -iE 'godot|Astral|FATAL' | tail -15
 ```
 Expected: `Success` on install; the app launches; logcat shows Godot starting with no FATAL. If no device is connected, record that on-device run is deferred and stop after Step 3.
 
@@ -1262,4 +1262,4 @@ git commit -m "docs: boat steering slice validation and handoff"
 - Godot `.tscn` and `project.godot` text formats are picky. If the editor rewrites a scene file on first open, prefer letting `godot-mono` regenerate it over hand-fighting the format — but keep node names and scripts as specified.
 - The headless `--import` step can crash on shutdown (signal 11) without harming output; this is documented in `environment.md`. Judge success by the build and the expected printout, not by the exit code of `--import`.
 - Never run plain `godot` against this project; always `godot-mono`.
-- If a ~30 MB APK is produced instead of ~100 MB, the C# assembly was omitted — check that `Celestial.sln` exists in classic format and lists `Celestial.Game`, and that the `.csproj` targets `net9.0`.
+- If a ~30 MB APK is produced instead of ~100 MB, the C# assembly was omitted — check that `Astral.sln` exists in classic format and lists `Astral.Game`, and that the `.csproj` targets `net9.0`.
